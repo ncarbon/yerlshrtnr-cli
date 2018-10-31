@@ -9,6 +9,8 @@ As of right now, this app:
 * Provides expiration of a URL upon request (optional)
 
 
+[The API (yerlshrtnr-api) serving this client can be found here.](https://github.com/ncarbon/yerlshrtnr)
+
 ### Demo
 ![walkthrough/demo](walkthrough.gif)
 
