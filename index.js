@@ -61,7 +61,7 @@ const run = async () => {
     const answers = await displayPrompt();
 
     const options = {
-        url:'https://yerlshrtnr.herokuapp.com/api/short_url',
+        url:'http://yerlshrtnr.herokuapp.com/api/shorturl',
         form: {
             url: answers.url,
             customId: answers.customId,
@@ -70,12 +70,15 @@ const run = async () => {
     }
 
     request.post(options, (err, response) => {
+        response.body = JSON.parse(response.body);
         if(err) {
             console.log(err);
+        } 
+        else if(response.body.error) {
+            handleError(response.body.error);
         } else {
-            const json = JSON.parse(response.body);
             console.log();
-            console.log(chalk.green('>>>> Shortened URL: ' ) + chalk.magenta(json.shortURL));
+            console.log(chalk.green('>>>> Shortened URL: ' ) + chalk.magenta(response.body.shortURL));
             console.log();
             if(answers.ttl) {
                 console.log(chalk.bgRed(`Your short URL will expire in ${answers.ttl} seconds.`));
@@ -83,6 +86,15 @@ const run = async () => {
             }
         }
     });
+};
+
+var handleError = (err) => {
+    if(err.type == 'DUPLICATE') {
+        console.log('Error: Custom URL id already exists. Please try again.');
+    } else {
+        console.log(err)
+        console.log('Error: Short URL could not be generated. Please try again.');
+    }
 };
 
 run();
