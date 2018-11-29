@@ -5,12 +5,26 @@ const chalk = require('chalk');
 const figlet = require('figlet');
 const request = require('request');
 
+var validateUrl = (url) => {
+    var pattern = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)?/;
+    return pattern.test(url);
+};
+
 var displayPrompt = () => {
     return inquirer.prompt([
         {
             name: 'url',
             type: 'input',
-            message: chalk.cyan('Enter the URL to be shortened')
+            message: chalk.cyan('Enter the URL to be shortened'),
+            validate: function (input) {
+                var done = this.async();
+                var pattern = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)?/;
+                if(!pattern.test(input)) {
+                    done('Invalid input. Please try again.');
+                    return;
+                }
+                done(null, true);
+            }
         },
         {
             name: 'wantCustomId',
@@ -24,7 +38,7 @@ var displayPrompt = () => {
             },
             name: 'customId',
             type: 'input',
-            message: chalk.cyan('What is your custom URL ID? e.g yerlshrtnr.com/[YOUR_CUSTOM_ID]')
+            message: chalk.cyan('What is your custom URL ID? e.g yrlshrt.com/[YOUR_CUSTOM_ID]')
         },
         {
             name: 'wantTtl',
@@ -60,8 +74,10 @@ const run = async () => {
     init();
     const answers = await displayPrompt();
 
+    // TODO: handle url expiration settings if any
+
     const options = {
-        url:'http://yerlshrtnr.herokuapp.com/api/shorturl',
+        url:'http://www.yrlshrt.com/api/shorturl',
         form: {
             url: answers.url,
             customId: answers.customId,
@@ -73,13 +89,17 @@ const run = async () => {
         response.body = JSON.parse(response.body);
         if(err) {
             console.log(err);
-        } 
-        else if(response.body.error) {
+        } else if(response.body.error) {
             handleError(response.body.error);
         } else {
             console.log();
+            if(response.body.duplicate) {
+                console.log(chalk.yellow('The custom id provided already exists. A random one was generated below.'));
+            }
+            console.log();
             console.log(chalk.green('>>>> Shortened URL: ' ) + chalk.magenta(response.body.shortURL));
             console.log();
+        
             if(answers.ttl) {
                 console.log(chalk.bgRed(`Your short URL will expire in ${answers.ttl} seconds.`));
                 console.log();
@@ -89,12 +109,8 @@ const run = async () => {
 };
 
 var handleError = (err) => {
-    if(err.type == 'DUPLICATE') {
-        console.log('Error: Custom URL id already exists. Please try again.');
-    } else {
-        console.log(err)
-        console.log('Error: Short URL could not be generated. Please try again.');
-    }
+    console.log(err);
+    console.log('Error: Short URL could not be generated. Please try again.');
 };
 
 run();
